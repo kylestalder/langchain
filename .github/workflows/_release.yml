@@ -26,7 +26,7 @@ on:
         description: "Release from a non-master branch (danger!) - Only use for hotfixes"
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"
 

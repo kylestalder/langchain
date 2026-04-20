@@ -1052,7 +1052,7 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 )
 def test_convert_union_type_py_39() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
+    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001
         """Compute a magic function."""
         return ""
 

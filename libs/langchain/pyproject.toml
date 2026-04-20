@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9, <4.0"
+requires-python = ">=3.10, <4.0"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.72",
     "langchain-text-splitters<1.0.0,>=0.3.9",
@@ -63,8 +63,7 @@ test = [
     "requests-mock<2.0.0,>=1.11.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster<1.6,>=1.5.18",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
+    "cffi",
     "langchain-tests",
     "langchain-core",
     "langchain-text-splitters",
@@ -77,7 +76,6 @@ test = [
 codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
     "vcrpy>=7.0",
-    "urllib3<2; python_version < \"3.10\"",
     "wrapt<2.0.0,>=1.15.0",
     "python-dotenv<2.0.0,>=1.0.0",
     "cassio<1.0.0,>=0.1.0",
@@ -87,8 +85,7 @@ test_integration = [
 ]
 lint = [
     "ruff<0.13,>=0.12.2",
-    "cffi<1.17.1; python_version < \"3.10\"",
-    "cffi; python_version >= \"3.10\"",
+    "cffi",
 ]
 typing = [
     "mypy<1.16,>=1.15",
@@ -120,7 +117,7 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
@@ -158,6 +155,13 @@ ignore = [
     "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
+
+    # Annotation modernization rules (py310+) - defer to follow-up PR
+    "B905",    # zip(strict=...)
+    "UP007",   # Union[X, Y] -> X | Y
+    "UP035",   # typing.List etc deprecated imports
+    "UP038",   # isinstance tuple -> X | Y
+    "UP045",   # Optional[X] -> X | None
 
     # TODO rules
     "ANN401",

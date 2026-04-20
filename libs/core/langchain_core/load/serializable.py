@@ -6,9 +6,7 @@ from abc import ABC
 from typing import (
     Any,
     Literal,
-    Optional,
     TypedDict,
-    Union,
     cast,
 )
 
@@ -66,7 +64,7 @@ class SerializedNotImplemented(BaseSerialized):
     """
 
     type: Literal["not_implemented"]
-    repr: Optional[str]
+    repr: str | None
 
 
 def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
@@ -200,7 +198,7 @@ class Serializable(BaseModel, ABC):
             if (k not in type(self).model_fields or try_neq_default(v, k, self))
         ]
 
-    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
         """Serialize the object to JSON.
 
         Returns:

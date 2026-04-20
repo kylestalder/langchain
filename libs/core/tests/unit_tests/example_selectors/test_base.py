@@ -1,11 +1,9 @@
-from typing import Optional
-
 from langchain_core.example_selectors import BaseExampleSelector
 
 
 class DummyExampleSelector(BaseExampleSelector):
     def __init__(self) -> None:
-        self.example: Optional[dict[str, str]] = None
+        self.example: dict[str, str] | None = None
 
     def add_example(self, example: dict[str, str]) -> None:
         self.example = example

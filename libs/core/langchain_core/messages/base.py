@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import ConfigDict, Field
 
@@ -23,7 +23,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of ChatModels.
     """
 
-    content: Union[str, list[Union[str, dict]]]
+    content: str | list[str | dict]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
@@ -44,7 +44,7 @@ class BaseMessage(Serializable):
     when deserializing messages.
     """
 
-    name: Optional[str] = None
+    name: str | None = None
     """An optional name for the message.
 
     This can be used to provide a human-readable name for the message.
@@ -53,7 +53,7 @@ class BaseMessage(Serializable):
     model implementation.
     """
 
-    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
+    id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
 
@@ -61,9 +61,7 @@ class BaseMessage(Serializable):
         extra="allow",
     )
 
-    def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
+    def __init__(self, content: str | list[str | dict], **kwargs: Any) -> None:
         """Pass in content as positional arg.
 
         Args:
@@ -140,9 +138,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: Union[str, list[Union[str, dict]]],
-    *contents: Union[str, list[Union[str, dict]]],
-) -> Union[str, list[Union[str, dict]]]:
+    first_content: str | list[str | dict],
+    *contents: str | list[str | dict],
+) -> str | list[str | dict]:
     """Merge multiple message contents.
 
     Args:

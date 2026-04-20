@@ -1,5 +1,6 @@
 import json
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core.utils.json import parse_json_markdown
 from typing_extensions import override
@@ -31,8 +32,8 @@ class JsonEditDistanceEvaluator(StringEvaluator):
 
     def __init__(
         self,
-        string_distance: Optional[Callable[[str, str], float]] = None,
-        canonicalize: Optional[Callable[[Any], Any]] = None,
+        string_distance: Callable[[str, str], float] | None = None,
+        canonicalize: Callable[[Any], Any] | None = None,
         **_: Any,
     ) -> None:
         """Initialize the JsonEditDistanceEvaluator.
@@ -89,7 +90,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     def evaluation_name(self) -> str:
         return "json_edit_distance"
 
-    def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
+    def _parse_json(self, node: Any) -> dict | list | None | float | bool | int | str:
         if isinstance(node, str):
             return parse_json_markdown(node)
         return node
@@ -98,8 +99,8 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        input: Optional[str] = None,
-        reference: Optional[str] = None,
+        input: str | None = None,
+        reference: str | None = None,
         **kwargs: Any,
     ) -> dict:
         parsed = self._canonicalize(self._parse_json(prediction))

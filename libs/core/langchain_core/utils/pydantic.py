@@ -5,16 +5,15 @@ from __future__ import annotations
 import inspect
 import textwrap
 import warnings
+from collections.abc import Callable
 from contextlib import nullcontext
 from functools import lru_cache, wraps
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -188,8 +187,8 @@ def _create_subset_model_v1(
     model: type[BaseModelV1],
     field_names: list,
     *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
+    descriptions: dict | None = None,
+    fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
@@ -201,7 +200,7 @@ def _create_subset_model_v1(
             # this isn't perfect but should work for most functions
             field.outer_type_
             if field.required and not field.allow_none
-            else Optional[field.outer_type_]
+            else Optional[field.outer_type_]  # noqa: UP045
         )
         if descriptions and field_name in descriptions:
             field.field_info.description = descriptions[field_name]
@@ -217,8 +216,8 @@ def _create_subset_model_v2(
     model: type[BaseModel],
     field_names: list[str],
     *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
+    descriptions: dict | None = None,
+    fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create a pydantic model with a subset of the model fields."""
     descriptions_ = descriptions or {}
@@ -259,8 +258,8 @@ def _create_subset_model(
     model: TypeBaseModel,
     field_names: list[str],
     *,
-    descriptions: Optional[dict] = None,
-    fn_description: Optional[str] = None,
+    descriptions: dict | None = None,
+    fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create subset model using the same pydantic version as the input model."""
     if issubclass(model, BaseModelV1):
@@ -297,8 +296,8 @@ def get_fields(model: BaseModelV1) -> dict[str, ModelField]: ...
 
 
 def get_fields(
-    model: Union[type[Union[BaseModel, BaseModelV1]], BaseModel, BaseModelV1],
-) -> Union[dict[str, FieldInfoV2], dict[str, ModelField]]:
+    model: type[BaseModel | BaseModelV1] | BaseModel | BaseModelV1,
+) -> dict[str, FieldInfoV2] | dict[str, ModelField]:
     """Get the field names of a Pydantic model."""
     if hasattr(model, "model_fields"):
         return model.model_fields
@@ -319,7 +318,7 @@ NO_DEFAULT = object()
 def _create_root_model(
     name: str,
     type_: Any,
-    module_name: Optional[str] = None,
+    module_name: str | None = None,
     default_: object = NO_DEFAULT,
 ) -> type[BaseModel]:
     """Create a base class."""
@@ -384,7 +383,7 @@ def _create_root_model_cached(
     model_name: str,
     type_: Any,
     *,
-    module_name: Optional[str] = None,
+    module_name: str | None = None,
     default_: object = NO_DEFAULT,
 ) -> type[BaseModel]:
     return _create_root_model(
@@ -407,7 +406,7 @@ def _create_model_cached(
 
 def create_model(
     model_name: str,
-    module_name: Optional[str] = None,
+    module_name: str | None = None,
     /,
     **field_definitions: Any,
 ) -> type[BaseModel]:
@@ -480,9 +479,9 @@ def _remap_field_definitions(field_definitions: dict[str, Any]) -> dict[str, Any
 def create_model_v2(
     model_name: str,
     *,
-    module_name: Optional[str] = None,
-    field_definitions: Optional[dict[str, Any]] = None,
-    root: Optional[Any] = None,
+    module_name: str | None = None,
+    field_definitions: dict[str, Any] | None = None,
+    root: Any | None = None,
 ) -> type[BaseModel]:
     """Create a pydantic model with the given field definitions.
 

@@ -885,5 +885,5 @@ def test_max_tokens_error(caplog: Any) -> None:
         _ = parser.invoke(message)
     assert any(
         "`max_tokens` stop reason" in msg and record.levelname == "ERROR"
-        for record, msg in zip(caplog.records, caplog.messages)
+        for record, msg in zip(caplog.records, caplog.messages, strict=False)
     )

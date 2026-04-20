@@ -6,7 +6,7 @@ import ast
 import asyncio
 import inspect
 import textwrap
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextvars import Context
 from functools import lru_cache
 from inspect import signature
@@ -14,15 +14,13 @@ from itertools import groupby
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
-    Optional,
     Protocol,
+    TypeGuard,
     TypeVar,
-    Union,
 )
 
-from typing_extensions import TypeGuard, override
+from typing_extensions import override
 
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model  # noqa: F401
@@ -57,7 +55,7 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
         return await coro
 
 
-async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> list:
+async def gather_with_concurrency(n: int | None, *coros: Coroutine) -> list:
     """Gather coroutines with a limit on the number of concurrent coroutines.
 
     Args:
@@ -368,7 +366,7 @@ class GetLambdaSource(ast.NodeVisitor):
 
     def __init__(self) -> None:
         """Initialize the visitor."""
-        self.source: Optional[str] = None
+        self.source: str | None = None
         self.count = 0
 
     @override
@@ -386,7 +384,7 @@ class GetLambdaSource(ast.NodeVisitor):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
+def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
     """Get the keys of the first argument of a function if it is a dict.
 
     Args:
@@ -406,7 +404,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
         return None
 
 
-def get_lambda_source(func: Callable) -> Optional[str]:
+def get_lambda_source(func: Callable) -> str | None:
     """Get the source code of a lambda function.
 
     Args:
@@ -542,7 +540,7 @@ class SupportsAdd(Protocol[_T_contra, _T_co]):
 Addable = TypeVar("Addable", bound=SupportsAdd[Any, Any])
 
 
-def add(addables: Iterable[Addable]) -> Optional[Addable]:
+def add(addables: Iterable[Addable]) -> Addable | None:
     """Add a sequence of addable objects together.
 
     Args:
@@ -551,13 +549,13 @@ def add(addables: Iterable[Addable]) -> Optional[Addable]:
     Returns:
         Optional[Addable]: The result of adding the addable objects.
     """
-    final: Optional[Addable] = None
+    final: Addable | None = None
     for chunk in addables:
         final = chunk if final is None else final + chunk
     return final
 
 
-async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
+async def aadd(addables: AsyncIterable[Addable]) -> Addable | None:
     """Asynchronously add a sequence of addable objects together.
 
     Args:
@@ -566,7 +564,7 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
     Returns:
         Optional[Addable]: The result of adding the addable objects.
     """
-    final: Optional[Addable] = None
+    final: Addable | None = None
     async for chunk in addables:
         final = chunk if final is None else final + chunk
     return final
@@ -585,9 +583,9 @@ class ConfigurableField(NamedTuple):
 
     id: str
 
-    name: Optional[str] = None
-    description: Optional[str] = None
-    annotation: Optional[Any] = None
+    name: str | None = None
+    description: str | None = None
+    annotation: Any | None = None
     is_shared: bool = False
 
     @override
@@ -611,8 +609,8 @@ class ConfigurableFieldSingleOption(NamedTuple):
     options: Mapping[str, Any]
     default: str
 
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     is_shared: bool = False
 
     @override
@@ -636,8 +634,8 @@ class ConfigurableFieldMultiOption(NamedTuple):
     options: Mapping[str, Any]
     default: Sequence[str]
 
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     is_shared: bool = False
 
     @override
@@ -645,9 +643,9 @@ class ConfigurableFieldMultiOption(NamedTuple):
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
 
-AnyConfigurableField = Union[
-    ConfigurableField, ConfigurableFieldSingleOption, ConfigurableFieldMultiOption
-]
+AnyConfigurableField = (
+    ConfigurableField | ConfigurableFieldSingleOption | ConfigurableFieldMultiOption
+)
 
 
 class ConfigurableFieldSpec(NamedTuple):
@@ -666,11 +664,11 @@ class ConfigurableFieldSpec(NamedTuple):
     id: str
     annotation: Any
 
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     default: Any = None
     is_shared: bool = False
-    dependencies: Optional[list[str]] = None
+    dependencies: list[str] | None = None
 
 
 def get_unique_config_specs(
@@ -709,12 +707,12 @@ class _RootEventFilter:
     def __init__(
         self,
         *,
-        include_names: Optional[Sequence[str]] = None,
-        include_types: Optional[Sequence[str]] = None,
-        include_tags: Optional[Sequence[str]] = None,
-        exclude_names: Optional[Sequence[str]] = None,
-        exclude_types: Optional[Sequence[str]] = None,
-        exclude_tags: Optional[Sequence[str]] = None,
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
     ) -> None:
         """Utility to filter the root event in the astream_events implementation.
 

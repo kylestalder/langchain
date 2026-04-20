@@ -2,7 +2,7 @@
 
 import threading
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from langchain_core.callbacks import base as base_callbacks
@@ -54,7 +54,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -66,7 +66,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         outputs: dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -78,7 +78,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -90,7 +90,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         documents: Sequence[Document],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -102,7 +102,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -114,7 +114,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -126,7 +126,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:
@@ -138,7 +138,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         output: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         if parent_run_id is None:

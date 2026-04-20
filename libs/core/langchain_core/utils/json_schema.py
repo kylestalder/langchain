@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -39,7 +39,7 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
 def _dereference_refs_helper(
     obj: Any,
     full_schema: dict[str, Any],
-    processed_refs: Optional[set[str]],
+    processed_refs: set[str] | None,
     skip_keys: Sequence[str],
     shallow_refs: bool,  # noqa: FBT001
 ) -> Any:
@@ -102,8 +102,8 @@ def _dereference_refs_helper(
 def dereference_refs(
     schema_obj: dict,
     *,
-    full_schema: Optional[dict] = None,
-    skip_keys: Optional[Sequence[str]] = None,
+    full_schema: dict | None = None,
+    skip_keys: Sequence[str] | None = None,
 ) -> dict:
     """Try to substitute $refs in JSON Schema.
 

@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
 )
 
 from typing_extensions import override
@@ -174,20 +173,20 @@ class InMemoryVectorStore(VectorStore):
         return self.embedding
 
     @override
-    def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
+    def delete(self, ids: Sequence[str] | None = None, **kwargs: Any) -> None:
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
     @override
-    async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
+    async def adelete(self, ids: Sequence[str] | None = None, **kwargs: Any) -> None:
         self.delete(ids)
 
     @override
     def add_documents(
         self,
         documents: list[Document],
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """Add documents to the store."""
@@ -201,13 +200,13 @@ class InMemoryVectorStore(VectorStore):
             )
             raise ValueError(msg)
 
-        id_iterator: Iterator[Optional[str]] = (
+        id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
 
         ids_ = []
 
-        for doc, vector in zip(documents, vectors):
+        for doc, vector in zip(documents, vectors, strict=False):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
@@ -222,7 +221,7 @@ class InMemoryVectorStore(VectorStore):
 
     @override
     async def aadd_documents(
-        self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
+        self, documents: list[Document], ids: list[str] | None = None, **kwargs: Any
     ) -> list[str]:
         """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
@@ -235,12 +234,12 @@ class InMemoryVectorStore(VectorStore):
             )
             raise ValueError(msg)
 
-        id_iterator: Iterator[Optional[str]] = (
+        id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
         ids_: list[str] = []
 
-        for doc, vector in zip(documents, vectors):
+        for doc, vector in zip(documents, vectors, strict=False):
             doc_id = next(id_iterator)
             doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
@@ -296,7 +295,7 @@ class InMemoryVectorStore(VectorStore):
         """
         vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
-        for item, vector in zip(items, vectors):
+        for item, vector in zip(items, vectors, strict=False):
             doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
@@ -333,7 +332,7 @@ class InMemoryVectorStore(VectorStore):
             [item.page_content for item in items]
         )
         ids = []
-        for item, vector in zip(items, vectors):
+        for item, vector in zip(items, vectors, strict=False):
             doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
@@ -363,7 +362,7 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
+        filter: Callable[[Document], bool] | None = None,  # noqa: A002
     ) -> list[tuple[Document, float, list[float]]]:
         # get all docs with fixed order in list
         docs = list(self.store.values())
@@ -402,7 +401,7 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
+        filter: Callable[[Document], bool] | None = None,  # noqa: A002
         **_kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Search for the most similar documents to the given embedding.
@@ -490,7 +489,7 @@ class InMemoryVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         *,
-        filter: Optional[Callable[[Document], bool]] = None,
+        filter: Callable[[Document], bool] | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         prefetch_hits = self._similarity_search_with_score_by_vector(
@@ -558,7 +557,7 @@ class InMemoryVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
         store = cls(
@@ -573,7 +572,7 @@ class InMemoryVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
         store = cls(

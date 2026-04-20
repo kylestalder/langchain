@@ -4,7 +4,7 @@ import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -132,7 +132,7 @@ def get_usage_metadata_callback(
     """
     from langchain_core.tracers.context import register_configure_hook
 
-    usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
+    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
         ContextVar(name, default=None)
     )
     register_configure_hook(usage_metadata_callback_var, inheritable=True)

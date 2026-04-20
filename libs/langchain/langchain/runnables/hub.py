@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.utils import Input, Output
@@ -15,8 +15,8 @@ class HubRunnable(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
         self,
         owner_repo_commit: str,
         *,
-        api_url: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_url: str | None = None,
+        api_key: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the HubRunnable.

@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import requests
 from langchain_core._api import deprecated
@@ -165,9 +166,9 @@ def openapi_spec_to_openai_fn(
     def default_call_api(
         name: str,
         fn_args: dict,
-        headers: Optional[dict] = None,
-        params: Optional[dict] = None,
-        timeout: Optional[int] = 30,
+        headers: dict | None = None,
+        params: dict | None = None,
+        timeout: int | None = 30,
         **kwargs: Any,
     ) -> Any:
         method = _name_to_call_map[name]["method"]
@@ -215,7 +216,7 @@ class SimpleRequestChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Run the logic of this chain and return the output."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
@@ -250,14 +251,14 @@ class SimpleRequestChain(Chain):
     removal="1.0",
 )
 def get_openapi_chain(
-    spec: Union[OpenAPISpec, str],
-    llm: Optional[BaseLanguageModel] = None,
-    prompt: Optional[BasePromptTemplate] = None,
-    request_chain: Optional[Chain] = None,
-    llm_chain_kwargs: Optional[dict] = None,
+    spec: OpenAPISpec | str,
+    llm: BaseLanguageModel | None = None,
+    prompt: BasePromptTemplate | None = None,
+    request_chain: Chain | None = None,
+    llm_chain_kwargs: dict | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
-    headers: Optional[dict] = None,
-    params: Optional[dict] = None,
+    headers: dict | None = None,
+    params: dict | None = None,
     **kwargs: Any,
 ) -> SequentialChain:
     """Create a chain for querying an API from a OpenAPI spec.

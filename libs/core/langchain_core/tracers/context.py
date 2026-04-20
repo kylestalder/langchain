@@ -8,8 +8,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 from uuid import UUID
@@ -31,10 +29,10 @@ if TYPE_CHECKING:
 
 # for backwards partial compatibility if this is imported by users but unused
 tracing_callback_var: Any = None
-tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
+tracing_v2_callback_var: ContextVar[LangChainTracer | None] = ContextVar(
     "tracing_callback_v2", default=None
 )
-run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(
+run_collector_var: ContextVar[RunCollectorCallbackHandler | None] = ContextVar(
     "run_collector", default=None
 )
 
@@ -52,11 +50,11 @@ def tracing_enabled(
 
 @contextmanager
 def tracing_v2_enabled(
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     *,
-    example_id: Optional[Union[str, UUID]] = None,
-    tags: Optional[list[str]] = None,
-    client: Optional[LangSmithClient] = None,
+    example_id: str | UUID | None = None,
+    tags: list[str] | None = None,
+    client: LangSmithClient | None = None,
 ) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
@@ -119,9 +117,9 @@ def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
 
 
 def _get_trace_callbacks(
-    project_name: Optional[str] = None,
-    example_id: Optional[Union[str, UUID]] = None,
-    callback_manager: Optional[Union[CallbackManager, AsyncCallbackManager]] = None,
+    project_name: str | None = None,
+    example_id: str | UUID | None = None,
+    callback_manager: CallbackManager | AsyncCallbackManager | None = None,
 ) -> Callbacks:
     if _tracing_v2_is_enabled():
         project_name_ = project_name or _get_tracer_project()
@@ -145,7 +143,7 @@ def _get_trace_callbacks(
     return cb
 
 
-def _tracing_v2_is_enabled() -> Union[bool, Literal["local"]]:
+def _tracing_v2_is_enabled() -> bool | Literal["local"]:
     if tracing_v2_callback_var.get() is not None:
         return True
     return ls_utils.tracing_is_enabled()
@@ -176,19 +174,19 @@ def _get_tracer_project() -> str:
 
 _configure_hooks: list[
     tuple[
-        ContextVar[Optional[BaseCallbackHandler]],
+        ContextVar[BaseCallbackHandler | None],
         bool,
-        Optional[type[BaseCallbackHandler]],
-        Optional[str],
+        type[BaseCallbackHandler] | None,
+        str | None,
     ]
 ] = []
 
 
 def register_configure_hook(
-    context_var: ContextVar[Optional[Any]],
+    context_var: ContextVar[Any | None],
     inheritable: bool,  # noqa: FBT001
-    handle_class: Optional[type[BaseCallbackHandler]] = None,
-    env_var: Optional[str] = None,
+    handle_class: type[BaseCallbackHandler] | None = None,
+    env_var: str | None = None,
 ) -> None:
     """Register a configure hook.
 
@@ -211,7 +209,7 @@ def register_configure_hook(
         (
             # the typings of ContextVar do not have the generic arg set as covariant
             # so we have to cast it
-            cast("ContextVar[Optional[BaseCallbackHandler]]", context_var),
+            cast("ContextVar[BaseCallbackHandler | None]", context_var),
             inheritable,
             handle_class,
             env_var,

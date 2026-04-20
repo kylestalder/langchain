@@ -14,8 +14,8 @@ import contextlib
 import functools
 import inspect
 import warnings
-from collections.abc import Generator
-from typing import Any, Callable, TypeVar, Union, cast
+from collections.abc import Callable, Generator
+from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -27,7 +27,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Callable[..., Any], type])
+T = TypeVar("T", bound=Callable[..., Any] | type)
 
 
 def beta(
@@ -158,10 +158,10 @@ def beta(
 
                 def __init__(
                     self,
-                    fget: Union[Callable[[Any], Any], None] = None,
-                    fset: Union[Callable[[Any, Any], None], None] = None,
-                    fdel: Union[Callable[[Any], None], None] = None,
-                    doc: Union[str, None] = None,
+                    fget: Callable[[Any], Any] | None = None,
+                    fset: Callable[[Any, Any], None] | None = None,
+                    fdel: Callable[[Any], None] | None = None,
+                    doc: str | None = None,
                 ) -> None:
                     super().__init__(fget, fset, fdel, doc)
                     self.__orig_fget = fget
@@ -169,9 +169,7 @@ def beta(
                     self.__orig_fdel = fdel
                     self.__doc__ = doc
 
-                def __get__(
-                    self, instance: Any, owner: Union[type, None] = None
-                ) -> Any:
+                def __get__(self, instance: Any, owner: type | None = None) -> Any:
                     if instance is not None or owner is not None:
                         emit_warning()
                     return self.fget(instance)
@@ -186,7 +184,7 @@ def beta(
                         emit_warning()
                     return self.fdel(instance)
 
-                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
+                def __set_name__(self, owner: type | None, set_name: str) -> None:
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name

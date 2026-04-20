@@ -5,7 +5,7 @@ import inspect
 import typing
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
@@ -92,7 +92,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
-    exception_key: Optional[str] = None
+    exception_key: str | None = None
     """If string is specified then handled exceptions will be passed to fallbacks as
         part of the input under the specified key. If None, exceptions
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks
@@ -113,14 +113,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return self.runnable.OutputType
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
     @override
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
@@ -155,7 +153,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -207,8 +205,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     async def ainvoke(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Output:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -257,10 +255,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def batch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         from langchain_core.callbacks.manager import CallbackManager
 
@@ -298,7 +296,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
             )
-            for cm, input_, config in zip(callback_managers, inputs, configs)
+            for cm, input_, config in zip(
+                callback_managers, inputs, configs, strict=False
+            )
         ]
 
         to_return: dict[int, Any] = {}
@@ -316,7 +316,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return_exceptions=True,
                 **kwargs,
             )
-            for (i, input_), output in zip(sorted(run_again.copy().items()), outputs):
+            for (i, input_), output in zip(
+                sorted(run_again.copy().items()), outputs, strict=False
+            ):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -351,10 +353,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     async def abatch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
@@ -393,11 +395,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
                 )
-                for cm, input_, config in zip(callback_managers, inputs, configs)
+                for cm, input_, config in zip(
+                    callback_managers, inputs, configs, strict=False
+                )
             )
         )
 
-        to_return: dict[int, Union[Output, BaseException]] = {}
+        to_return: dict[int, Output | BaseException] = {}
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
@@ -413,7 +417,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
 
-            for (i, input_), output in zip(sorted(run_again.copy().items()), outputs):
+            for (i, input_), output in zip(
+                sorted(run_again.copy().items()), outputs, strict=False
+            ):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -453,8 +459,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -500,7 +506,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise first_error
 
         yield chunk
-        output: Optional[Output] = chunk
+        output: Output | None = chunk
         try:
             for chunk in stream:
                 yield chunk
@@ -517,8 +523,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -564,7 +570,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise first_error
 
         yield chunk
-        output: Optional[Output] = chunk
+        output: Output | None = chunk
         try:
             async for chunk in stream:
                 yield chunk

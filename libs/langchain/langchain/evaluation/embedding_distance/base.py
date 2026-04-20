@@ -4,7 +4,7 @@ import functools
 import logging
 from enum import Enum
 from importlib import util
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import (
@@ -230,7 +230,7 @@ class _EmbeddingDistanceChainMixin(Chain):
                 if hasattr(b, "flatten"):
                     b_flat = b.flatten()
 
-                dot_product = sum(x * y for x, y in zip(a_flat, b_flat))
+                dot_product = sum(x * y for x, y in zip(a_flat, b_flat, strict=False))
                 norm_a = sum(x * x for x in a_flat) ** 0.5
                 norm_b = sum(x * x for x in b_flat) ** 0.5
                 if norm_a == 0 or norm_b == 0:
@@ -258,7 +258,7 @@ class _EmbeddingDistanceChainMixin(Chain):
 
                 return np.linalg.norm(a - b)
 
-            return sum((x - y) * (x - y) for x, y in zip(a, b)) ** 0.5
+            return sum((x - y) * (x - y) for x, y in zip(a, b, strict=False)) ** 0.5
 
     @staticmethod
     def _manhattan_distance(a: Any, b: Any) -> Any:
@@ -280,7 +280,7 @@ class _EmbeddingDistanceChainMixin(Chain):
                 np = _import_numpy()
                 return np.sum(np.abs(a - b))
 
-            return sum(abs(x - y) for x, y in zip(a, b))
+            return sum(abs(x - y) for x, y in zip(a, b, strict=False))
 
     @staticmethod
     def _chebyshev_distance(a: Any, b: Any) -> Any:
@@ -302,7 +302,7 @@ class _EmbeddingDistanceChainMixin(Chain):
                 np = _import_numpy()
                 return np.max(np.abs(a - b))
 
-            return max(abs(x - y) for x, y in zip(a, b))
+            return max(abs(x - y) for x, y in zip(a, b, strict=False))
 
     @staticmethod
     def _hamming_distance(a: Any, b: Any) -> Any:
@@ -324,7 +324,7 @@ class _EmbeddingDistanceChainMixin(Chain):
                 np = _import_numpy()
                 return np.mean(a != b)
 
-            return sum(1 for x, y in zip(a, b) if x != y) / len(a)
+            return sum(1 for x, y in zip(a, b, strict=False) if x != y) / len(a)
 
     def _compute_score(self, vectors: Any) -> float:
         """Compute the score based on the distance metric.
@@ -381,7 +381,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Compute the score for a prediction and reference.
 
@@ -406,7 +406,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Asynchronously compute the score for a prediction and reference.
 
@@ -435,10 +435,10 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
+        reference: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -470,10 +470,10 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
+        reference: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -532,7 +532,7 @@ class PairwiseEmbeddingDistanceEvalChain(
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Compute the score for two predictions.
 
@@ -560,7 +560,7 @@ class PairwiseEmbeddingDistanceEvalChain(
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Asynchronously compute the score for two predictions.
 
@@ -591,8 +591,8 @@ class PairwiseEmbeddingDistanceEvalChain(
         prediction: str,
         prediction_b: str,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -627,8 +627,8 @@ class PairwiseEmbeddingDistanceEvalChain(
         prediction: str,
         prediction_b: str,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:

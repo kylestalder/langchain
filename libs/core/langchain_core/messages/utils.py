@@ -14,16 +14,13 @@ import inspect
 import json
 import logging
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
-    Optional,
-    Union,
     cast,
     overload,
 )
@@ -65,20 +62,18 @@ def _get_type(v: Any) -> str:
 
 
 AnyMessage = Annotated[
-    Union[
-        Annotated[AIMessage, Tag(tag="ai")],
-        Annotated[HumanMessage, Tag(tag="human")],
-        Annotated[ChatMessage, Tag(tag="chat")],
-        Annotated[SystemMessage, Tag(tag="system")],
-        Annotated[FunctionMessage, Tag(tag="function")],
-        Annotated[ToolMessage, Tag(tag="tool")],
-        Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
-        Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
-        Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
-        Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
-        Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
-        Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
-    ],
+    Annotated[AIMessage, Tag(tag="ai")]
+    | Annotated[HumanMessage, Tag(tag="human")]
+    | Annotated[ChatMessage, Tag(tag="chat")]
+    | Annotated[SystemMessage, Tag(tag="system")]
+    | Annotated[FunctionMessage, Tag(tag="function")]
+    | Annotated[ToolMessage, Tag(tag="tool")]
+    | Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")]
+    | Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")]
+    | Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")]
+    | Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")]
+    | Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")]
+    | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
 
@@ -202,18 +197,18 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
     )
 
 
-MessageLikeRepresentation = Union[
-    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
-]
+MessageLikeRepresentation = (
+    BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]
+)
 
 
 def _create_message_from_message_type(
     message_type: str,
     content: str,
-    name: Optional[str] = None,
-    tool_call_id: Optional[str] = None,
-    tool_calls: Optional[list[dict[str, Any]]] = None,
-    id: Optional[str] = None,
+    name: str | None = None,
+    tool_call_id: str | None = None,
+    tool_calls: list[dict[str, Any]] | None = None,
+    id: str | None = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -350,7 +345,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 
 def convert_to_messages(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
 ) -> list[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
@@ -380,12 +375,12 @@ def _runnable_support(func: Callable) -> Callable:
     ) -> list[BaseMessage]: ...
 
     def wrapped(
-        messages: Union[Sequence[MessageLikeRepresentation], None] = None,
+        messages: Sequence[MessageLikeRepresentation] | None = None,
         **kwargs: Any,
-    ) -> Union[
-        list[BaseMessage],
-        Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
-    ]:
+    ) -> (
+        list[BaseMessage]
+        | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
+    ):
         from langchain_core.runnables.base import RunnableLambda
 
         if messages is not None:
@@ -398,15 +393,15 @@ def _runnable_support(func: Callable) -> Callable:
 
 @_runnable_support
 def filter_messages(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
     *,
-    include_names: Optional[Sequence[str]] = None,
-    exclude_names: Optional[Sequence[str]] = None,
-    include_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
-    exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
-    include_ids: Optional[Sequence[str]] = None,
-    exclude_ids: Optional[Sequence[str]] = None,
-    exclude_tool_calls: Optional[Sequence[str] | bool] = None,
+    include_names: Sequence[str] | None = None,
+    exclude_names: Sequence[str] | None = None,
+    include_types: Sequence[str | type[BaseMessage]] | None = None,
+    exclude_types: Sequence[str | type[BaseMessage]] | None = None,
+    include_ids: Sequence[str] | None = None,
+    exclude_ids: Sequence[str] | None = None,
+    exclude_tool_calls: Sequence[str] | bool | None = None,
 ) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
@@ -527,7 +522,7 @@ def filter_messages(
 
 @_runnable_support
 def merge_message_runs(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
     *,
     chunk_separator: str = "\n",
 ) -> list[BaseMessage]:
@@ -627,24 +622,18 @@ def merge_message_runs(
 # init not at runtime.
 @_runnable_support
 def trim_messages(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
     *,
     max_tokens: int,
-    token_counter: Union[
-        Callable[[list[BaseMessage]], int],
-        Callable[[BaseMessage], int],
-        BaseLanguageModel,
-    ],
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel,
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
-    end_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
-    start_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
-    text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
+    text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
 ) -> list[BaseMessage]:
     r"""Trim messages to be below a token count.
 
@@ -907,7 +896,7 @@ def trim_messages(
     try:
         from langchain_text_splitters import TextSplitter
     except ImportError:
-        text_splitter_fn: Optional[Callable] = cast("Optional[Callable]", text_splitter)
+        text_splitter_fn: Callable | None = cast("Callable | None", text_splitter)
     else:
         if isinstance(text_splitter, TextSplitter):
             text_splitter_fn = text_splitter.split_text
@@ -941,10 +930,10 @@ def trim_messages(
 
 
 def convert_to_openai_messages(
-    messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
+    messages: MessageLikeRepresentation | Sequence[MessageLikeRepresentation],
     *,
     text_format: Literal["string", "block"] = "string",
-) -> Union[dict, list[dict]]:
+) -> dict | list[dict]:
     """Convert LangChain messages into OpenAI message dicts.
 
     Args:
@@ -1016,7 +1005,7 @@ def convert_to_openai_messages(
     for i, message in enumerate(messages):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
         tool_messages: list = []
-        content: Union[str, list[dict]]
+        content: str | list[dict]
 
         if message.name:
             oai_msg["name"] = message.name
@@ -1297,10 +1286,8 @@ def _first_max_tokens(
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int],
     text_splitter: Callable[[str], list[str]],
-    partial_strategy: Optional[Literal["first", "last"]] = None,
-    end_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
+    partial_strategy: Literal["first", "last"] | None = None,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
     if not messages:
@@ -1417,12 +1404,8 @@ def _last_max_tokens(
     text_splitter: Callable[[str], list[str]],
     allow_partial: bool = False,
     include_system: bool = False,
-    start_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
-    end_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
     if len(messages) == 0:
@@ -1519,7 +1502,7 @@ def _default_text_splitter(text: str) -> list[str]:
 
 def _is_message_type(
     message: BaseMessage,
-    type_: Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]],
+    type_: str | type[BaseMessage] | Sequence[str | type[BaseMessage]],
 ) -> bool:
     types = [type_] if isinstance(type_, (str, type)) else type_
     types_str = [t for t in types if isinstance(t, str)]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import model_validator
 from typing_extensions import Self
@@ -81,7 +81,7 @@ class ChatGenerationChunk(ChatGeneration):
     """Type is used exclusively for serialization purposes."""
 
     def __add__(
-        self, other: Union[ChatGenerationChunk, list[ChatGenerationChunk]]
+        self, other: ChatGenerationChunk | list[ChatGenerationChunk]
     ) -> ChatGenerationChunk:
         """Concatenate two ChatGenerationChunks.
 
@@ -115,7 +115,7 @@ class ChatGenerationChunk(ChatGeneration):
 
 def merge_chat_generation_chunks(
     chunks: list[ChatGenerationChunk],
-) -> Union[ChatGenerationChunk, None]:
+) -> ChatGenerationChunk | None:
     """Merge a list of ChatGenerationChunks into a single ChatGenerationChunk."""
     if not chunks:
         return None

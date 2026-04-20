@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import AsyncIterator, Iterator
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from typing_extensions import override
@@ -148,8 +148,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -181,8 +181,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -192,8 +192,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _stream(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> Iterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -227,8 +227,8 @@ async def test_astream_implementation_uses_astream() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -238,8 +238,8 @@ async def test_astream_implementation_uses_astream() -> None:
         async def _astream(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,  # type: ignore[override]
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -304,8 +304,8 @@ class NoStreamingModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=AIMessage("invoke"))])
@@ -320,8 +320,8 @@ class StreamingModel(NoStreamingModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
@@ -330,7 +330,7 @@ class StreamingModel(NoStreamingModel):
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
     assert model.invoke([]).content == "invoke"
@@ -355,7 +355,7 @@ def test_disable_streaming(
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_async(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
     assert (await model.ainvoke([])).content == "invoke"
@@ -382,7 +382,7 @@ async def test_disable_streaming_async(
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming_no_streaming_model(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
     assert model.invoke([]).content == "invoke"
@@ -397,7 +397,7 @@ def test_disable_streaming_no_streaming_model(
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_no_streaming_model_async(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
     assert (await model.ainvoke([])).content == "invoke"

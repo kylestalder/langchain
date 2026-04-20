@@ -1,6 +1,6 @@
 """System message."""
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -34,9 +34,7 @@ class SystemMessage(BaseMessage):
     type: Literal["system"] = "system"
     """The type of the message (used for serialization). Defaults to "system"."""
 
-    def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
+    def __init__(self, content: str | list[str | dict], **kwargs: Any) -> None:
         """Pass in content as positional arg.
 
         Args:

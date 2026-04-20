@@ -27,7 +27,7 @@ from pydantic import RootModel, ValidationError
 def test_serialization_of_wellknown_objects() -> None:
     """Test that pydantic is able to serialize and deserialize well known objects."""
     well_known_lc_object = RootModel[
-        Union[
+        Union[  # noqa: UP007
             Document,
             HumanMessage,
             SystemMessage,

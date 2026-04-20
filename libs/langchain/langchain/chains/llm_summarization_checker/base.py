@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -89,7 +89,7 @@ class LLMSummarizationCheckerChain(Chain):
     """
 
     sequential_chain: SequentialChain
-    llm: Optional[BaseLanguageModel] = None
+    llm: BaseLanguageModel | None = None
     """[Deprecated] LLM wrapper to use."""
 
     create_assertions_prompt: PromptTemplate = CREATE_ASSERTIONS_PROMPT
@@ -151,7 +151,7 @@ class LLMSummarizationCheckerChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         all_true = False

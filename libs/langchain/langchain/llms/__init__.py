@@ -19,7 +19,8 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 
 import warnings
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.llms import BaseLLM

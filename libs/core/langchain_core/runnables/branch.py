@@ -1,11 +1,15 @@
 """Runnable that selects which branch to run based on a condition."""
 
-from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -71,17 +75,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     def __init__(
         self,
-        *branches: Union[
-            tuple[
-                Union[
-                    Runnable[Input, bool],
-                    Callable[[Input], bool],
-                    Callable[[Input], Awaitable[bool]],
-                ],
-                RunnableLike,
-            ],
-            RunnableLike,  # To accommodate the default branch
-        ],
+        *branches: tuple[
+            Runnable[Input, bool]
+            | Callable[[Input], bool]
+            | Callable[[Input], Awaitable[bool]],
+            RunnableLike,
+        ]
+        | RunnableLike,
     ) -> None:
         """A Runnable that runs one of two branches based on a condition.
 
@@ -153,9 +153,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return ["langchain", "schema", "runnable"]
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -199,7 +197,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         """First evaluates the condition, then delegate to true or false branch.
 
@@ -258,7 +256,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @override
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         """Async version of invoke."""
         config = ensure_config(config)
@@ -309,8 +307,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         """First evaluates the condition, then delegate to true or false branch.
 
@@ -333,7 +331,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
-        final_output: Optional[Output] = None
+        final_output: Output | None = None
         final_output_supported = True
 
         try:
@@ -396,8 +394,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         """First evaluates the condition, then delegate to true or false branch.
 
@@ -420,7 +418,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
-        final_output: Optional[Output] = None
+        final_output: Output | None = None
         final_output_supported = True
 
         try:

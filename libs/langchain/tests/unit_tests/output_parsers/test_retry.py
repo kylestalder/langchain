@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from datetime import datetime as dt
 from datetime import timezone
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 from langchain_core.exceptions import OutputParserException
@@ -324,7 +325,7 @@ def _extract_exception(
     func: Callable[..., Any],
     *args: Any,
     **kwargs: Any,
-) -> Optional[Exception]:
+) -> Exception | None:
     try:
         func(*args, **kwargs)
     except Exception as e:

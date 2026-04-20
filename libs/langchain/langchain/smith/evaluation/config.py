@@ -1,7 +1,7 @@
 """Configuration for run evaluators."""
 
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
@@ -22,12 +22,12 @@ from langchain.evaluation.string_distance.base import (
 )
 
 RUN_EVALUATOR_LIKE = Callable[
-    [Run, Optional[Example]],
-    Union[EvaluationResult, EvaluationResults, dict],
+    [Run, Example | None],
+    EvaluationResult | EvaluationResults | dict,
 ]
 BATCH_EVALUATOR_LIKE = Callable[
-    [Sequence[Run], Optional[Sequence[Example]]],
-    Union[EvaluationResult, EvaluationResults, dict],
+    [Sequence[Run], Sequence[Example] | None],
+    EvaluationResult | EvaluationResults | dict,
 ]
 
 
@@ -68,14 +68,14 @@ class EvalConfig(BaseModel):
 class SingleKeyEvalConfig(EvalConfig):
     """Configuration for a run evaluator that only requires a single key."""
 
-    reference_key: Optional[str] = None
+    reference_key: str | None = None
     """The key in the dataset run to use as the reference string.
     If not provided, we will attempt to infer automatically."""
-    prediction_key: Optional[str] = None
+    prediction_key: str | None = None
     """The key from the traced run's outputs dictionary to use to
     represent the prediction. If not provided, it will be inferred
     automatically."""
-    input_key: Optional[str] = None
+    input_key: str | None = None
     """The key from the traced run's inputs dictionary to use to represent the
     input. If not provided, it will be inferred automatically."""
 
@@ -88,8 +88,8 @@ class SingleKeyEvalConfig(EvalConfig):
         return kwargs
 
 
-CUSTOM_EVALUATOR_TYPE = Union[RUN_EVALUATOR_LIKE, RunEvaluator, StringEvaluator]
-SINGLE_EVAL_CONFIG_TYPE = Union[EvaluatorType, str, EvalConfig]
+CUSTOM_EVALUATOR_TYPE = RUN_EVALUATOR_LIKE | RunEvaluator | StringEvaluator
+SINGLE_EVAL_CONFIG_TYPE = EvaluatorType | str | EvalConfig
 
 
 class RunEvalConfig(BaseModel):
@@ -123,12 +123,9 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: list[
-        Union[
-            SINGLE_EVAL_CONFIG_TYPE,
-            CUSTOM_EVALUATOR_TYPE,
-        ]
-    ] = Field(default_factory=list)
+    evaluators: list[SINGLE_EVAL_CONFIG_TYPE | CUSTOM_EVALUATOR_TYPE] = Field(
+        default_factory=list
+    )
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
@@ -136,26 +133,26 @@ class RunEvalConfig(BaseModel):
     given evaluator
     (e.g.,
     :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
-    custom_evaluators: Optional[list[CUSTOM_EVALUATOR_TYPE]] = None
+    custom_evaluators: list[CUSTOM_EVALUATOR_TYPE] | None = None
     """Custom evaluators to apply to the dataset run."""
-    batch_evaluators: Optional[list[BATCH_EVALUATOR_LIKE]] = None
+    batch_evaluators: list[BATCH_EVALUATOR_LIKE] | None = None
     """Evaluators that run on an aggregate/batch level.
 
     These generate 1 or more metrics that are assigned to the full test run.
     As a result, they are not associated with individual traces.
     """
 
-    reference_key: Optional[str] = None
+    reference_key: str | None = None
     """The key in the dataset run to use as the reference string.
     If not provided, we will attempt to infer automatically."""
-    prediction_key: Optional[str] = None
+    prediction_key: str | None = None
     """The key from the traced run's outputs dictionary to use to
     represent the prediction. If not provided, it will be inferred
     automatically."""
-    input_key: Optional[str] = None
+    input_key: str | None = None
     """The key from the traced run's inputs dictionary to use to represent the
     input. If not provided, it will be inferred automatically."""
-    eval_llm: Optional[BaseLanguageModel] = None
+    eval_llm: BaseLanguageModel | None = None
     """The language model to pass to any evaluators that require one."""
 
     model_config = ConfigDict(
@@ -174,8 +171,8 @@ class RunEvalConfig(BaseModel):
 
         """
 
-        criteria: Optional[CRITERIA_TYPE] = None
-        llm: Optional[BaseLanguageModel] = None
+        criteria: CRITERIA_TYPE | None = None
+        llm: BaseLanguageModel | None = None
         evaluator_type: EvaluatorType = EvaluatorType.CRITERIA
 
     class LabeledCriteria(SingleKeyEvalConfig):
@@ -189,8 +186,8 @@ class RunEvalConfig(BaseModel):
             The language model to use for the evaluation chain.
         """
 
-        criteria: Optional[CRITERIA_TYPE] = None
-        llm: Optional[BaseLanguageModel] = None
+        criteria: CRITERIA_TYPE | None = None
+        llm: BaseLanguageModel | None = None
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_CRITERIA
 
     class EmbeddingDistance(SingleKeyEvalConfig):
@@ -207,8 +204,8 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
-        embeddings: Optional[Embeddings] = None
-        distance_metric: Optional[EmbeddingDistanceEnum] = None
+        embeddings: Embeddings | None = None
+        distance_metric: EmbeddingDistanceEnum | None = None
 
         model_config = ConfigDict(
             arbitrary_types_allowed=True,
@@ -225,7 +222,7 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
-        distance: Optional[StringDistanceEnum] = None
+        distance: StringDistanceEnum | None = None
         """The string distance metric to use.
             damerau_levenshtein: The Damerau-Levenshtein distance.
             levenshtein: The Levenshtein distance.
@@ -248,8 +245,8 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.QA
-        llm: Optional[BaseLanguageModel] = None
-        prompt: Optional[BasePromptTemplate] = None
+        llm: BaseLanguageModel | None = None
+        prompt: BasePromptTemplate | None = None
 
     class ContextQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
@@ -264,8 +261,8 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
-        llm: Optional[BaseLanguageModel] = None
-        prompt: Optional[BasePromptTemplate] = None
+        llm: BaseLanguageModel | None = None
+        prompt: BasePromptTemplate | None = None
 
     class CoTQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
@@ -280,8 +277,8 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
-        llm: Optional[BaseLanguageModel] = None
-        prompt: Optional[BasePromptTemplate] = None
+        llm: BaseLanguageModel | None = None
+        prompt: BasePromptTemplate | None = None
 
     class JsonValidity(SingleKeyEvalConfig):
         """Configuration for a json validity evaluator.
@@ -354,10 +351,10 @@ class RunEvalConfig(BaseModel):
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.SCORE_STRING
-        criteria: Optional[CRITERIA_TYPE] = None
-        llm: Optional[BaseLanguageModel] = None
-        normalize_by: Optional[float] = None
-        prompt: Optional[BasePromptTemplate] = None
+        criteria: CRITERIA_TYPE | None = None
+        llm: BaseLanguageModel | None = None
+        normalize_by: float | None = None
+        prompt: BasePromptTemplate | None = None
 
     class LabeledScoreString(ScoreString):
         """ "Configuration for a labeled score string evaluator."""

@@ -1,6 +1,6 @@
 """Human message."""
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -41,9 +41,7 @@ class HumanMessage(BaseMessage):
     type: Literal["human"] = "human"
     """The type of the message (used for serialization). Defaults to "human"."""
 
-    def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
+    def __init__(self, content: str | list[str | dict], **kwargs: Any) -> None:
         """Pass in content as positional arg.
 
         Args:

@@ -3,15 +3,12 @@
 import asyncio
 import threading
 from collections import defaultdict
-from collections.abc import Awaitable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from functools import partial
 from itertools import groupby
 from typing import (
     Any,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from pydantic import ConfigDict
@@ -27,7 +24,7 @@ from langchain_core.runnables.config import RunnableConfig, ensure_config, patch
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 
 T = TypeVar("T")
-Values = dict[Union[asyncio.Event, threading.Event], Any]
+Values = dict[asyncio.Event | threading.Event, Any]
 CONTEXT_CONFIG_PREFIX = "__context__/"
 CONTEXT_CONFIG_SUFFIX_GET = "/get"
 CONTEXT_CONFIG_SUFFIX_SET = "/set"
@@ -70,7 +67,7 @@ def _config_with_context(
     steps: list[Runnable],
     setter: Callable,
     getter: Callable,
-    event_cls: Union[type[threading.Event], type[asyncio.Event]],
+    event_cls: type[threading.Event] | type[asyncio.Event],
 ) -> RunnableConfig:
     if any(k.startswith(CONTEXT_CONFIG_PREFIX) for k in config.get("configurable", {})):
         return config
@@ -96,9 +93,7 @@ def _config_with_context(
     }
 
     values: Values = {}
-    events: defaultdict[str, Union[asyncio.Event, threading.Event]] = defaultdict(
-        event_cls
-    )
+    events: defaultdict[str, asyncio.Event | threading.Event] = defaultdict(event_cls)
     context_funcs: dict[str, Callable[[], Any]] = {}
     for key, group in grouped_by_key.items():
         getters = [s for s in group if s[0].id.endswith(CONTEXT_CONFIG_SUFFIX_GET)]
@@ -161,7 +156,7 @@ class ContextGet(RunnableSerializable):
 
     prefix: str = ""
 
-    key: Union[str, list[str]]
+    key: str | list[str]
 
     @override
     def __str__(self) -> str:
@@ -190,32 +185,35 @@ class ContextGet(RunnableSerializable):
 
     @override
     def invoke(
-        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
-            return {key: configurable[id_]() for key, id_ in zip(self.key, self.ids)}
+            return {
+                key: configurable[id_]()
+                for key, id_ in zip(self.key, self.ids, strict=False)
+            }
         return configurable[self.ids[0]]()
 
     @override
     async def ainvoke(
-        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
         if isinstance(self.key, list):
             values = await asyncio.gather(*(configurable[id_]() for id_ in self.ids))
-            return dict(zip(self.key, values))
+            return dict(zip(self.key, values, strict=False))
         return await configurable[self.ids[0]]()
 
 
-SetValue = Union[
-    Runnable[Input, Output],
-    Callable[[Input], Output],
-    Callable[[Input], Awaitable[Output]],
-    Any,
-]
+SetValue = (
+    Runnable[Input, Output]
+    | Callable[[Input], Output]
+    | Callable[[Input], Awaitable[Output]]
+    | Any
+)
 
 
 def _coerce_set_value(value: SetValue) -> Runnable[Input, Output]:
@@ -230,7 +228,7 @@ class ContextSet(RunnableSerializable):
 
     prefix: str = ""
 
-    keys: Mapping[str, Optional[Runnable]]
+    keys: Mapping[str, Runnable | None]
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -238,8 +236,8 @@ class ContextSet(RunnableSerializable):
 
     def __init__(
         self,
-        key: Optional[str] = None,
-        value: Optional[SetValue] = None,
+        key: str | None = None,
+        value: SetValue | None = None,
         prefix: str = "",
         **kwargs: SetValue,
     ):
@@ -299,11 +297,11 @@ class ContextSet(RunnableSerializable):
 
     @override
     def invoke(
-        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
-        for id_, mapper in zip(self.ids, self.keys.values()):
+        for id_, mapper in zip(self.ids, self.keys.values(), strict=False):
             if mapper is not None:
                 configurable[id_](mapper.invoke(input, config))
             else:
@@ -312,11 +310,11 @@ class ContextSet(RunnableSerializable):
 
     @override
     async def ainvoke(
-        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Any:
         config = ensure_config(config)
         configurable = config.get("configurable", {})
-        for id_, mapper in zip(self.ids, self.keys.values()):
+        for id_, mapper in zip(self.ids, self.keys.values(), strict=False):
             if mapper is not None:
                 await configurable[id_](await mapper.ainvoke(input, config))
             else:
@@ -379,7 +377,7 @@ class Context:
         return PrefixContext(prefix=scope)
 
     @staticmethod
-    def getter(key: Union[str, list[str]], /) -> ContextGet:
+    def getter(key: str | list[str], /) -> ContextGet:
         """Return a context getter.
 
         Args:
@@ -389,8 +387,8 @@ class Context:
 
     @staticmethod
     def setter(
-        _key: Optional[str] = None,
-        _value: Optional[SetValue] = None,
+        _key: str | None = None,
+        _value: SetValue | None = None,
         /,
         **kwargs: SetValue,
     ) -> ContextSet:
@@ -417,7 +415,7 @@ class PrefixContext:
         """
         self.prefix = prefix
 
-    def getter(self, key: Union[str, list[str]], /) -> ContextGet:
+    def getter(self, key: str | list[str], /) -> ContextGet:
         """Return a prefixed context getter.
 
         Args:
@@ -427,8 +425,8 @@ class PrefixContext:
 
     def setter(
         self,
-        _key: Optional[str] = None,
-        _value: Optional[SetValue] = None,
+        _key: str | None = None,
+        _value: SetValue | None = None,
         /,
         **kwargs: SetValue,
     ) -> ContextSet:
@@ -442,7 +440,7 @@ class PrefixContext:
         return ContextSet(_key, _value, prefix=self.prefix, **kwargs)
 
 
-def _print_keys(keys: Union[str, Sequence[str]]) -> str:
+def _print_keys(keys: str | Sequence[str]) -> str:
     if isinstance(keys, str):
         return f"'{keys}'"
     return ", ".join(f"'{k}'" for k in keys)

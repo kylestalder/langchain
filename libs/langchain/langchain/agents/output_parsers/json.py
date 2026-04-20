@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -42,7 +41,7 @@ class JSONAgentOutputParser(AgentOutputParser):
     """
 
     @override
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         try:
             response = parse_json_markdown(text)
             if isinstance(response, list):  # type: ignore[unreachable]

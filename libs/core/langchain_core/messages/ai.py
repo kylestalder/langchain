@@ -3,7 +3,7 @@
 import json
 import logging
 import operator
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
@@ -171,7 +171,7 @@ class AIMessage(BaseMessage):
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: list[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     """If provided, usage metadata for a message, such as token counts.
 
     This is a standard representation of token usage that is consistent across models.
@@ -180,9 +180,7 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
-    def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
+    def __init__(self, content: str | list[str | dict], **kwargs: Any) -> None:
         """Pass in content as positional arg.
 
         Args:
@@ -258,7 +256,7 @@ class AIMessage(BaseMessage):
         base = super().pretty_repr(html=html)
         lines = []
 
-        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> list[str]:
+        def _format_tool_args(tc: ToolCall | InvalidToolCall) -> list[str]:
             lines = [
                 f"  {tc.get('name', 'Tool')} ({tc.get('id')})",
                 f" Call ID: {tc.get('id')}",
@@ -423,7 +421,7 @@ def add_ai_message_chunks(
 
     # Token usage
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
-        usage_metadata: Optional[UsageMetadata] = left.usage_metadata
+        usage_metadata: UsageMetadata | None = left.usage_metadata
         for other in others:
             usage_metadata = add_usage(usage_metadata, other.usage_metadata)
     else:
@@ -454,9 +452,7 @@ def add_ai_message_chunks(
     )
 
 
-def add_usage(
-    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
-) -> UsageMetadata:
+def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageMetadata:
     """Recursively add two UsageMetadata objects.
 
     Example:
@@ -510,7 +506,7 @@ def add_usage(
 
 
 def subtract_usage(
-    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
+    left: UsageMetadata | None, right: UsageMetadata | None
 ) -> UsageMetadata:
     """Recursively subtract two UsageMetadata objects.
 

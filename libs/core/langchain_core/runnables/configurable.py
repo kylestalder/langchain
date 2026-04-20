@@ -7,6 +7,7 @@ import threading
 from abc import abstractmethod
 from collections.abc import (
     AsyncIterator,
+    Callable,
     Iterator,
     Sequence,
 )
@@ -14,9 +15,6 @@ from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 from weakref import WeakValueDictionary
@@ -61,7 +59,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     default: RunnableSerializable[Input, Output]
 
-    config: Optional[RunnableConfig] = None
+    config: RunnableConfig | None = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -88,28 +86,26 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         return self.default.OutputType
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         runnable, config = self.prepare(config)
         return runnable.get_input_schema(config)
 
     @override
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> type[BaseModel]:
         runnable, config = self.prepare(config)
         return runnable.get_output_schema(config)
 
     @override
-    def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
+    def get_graph(self, config: RunnableConfig | None = None) -> Graph:
         runnable, config = self.prepare(config)
         return runnable.get_graph(config)
 
     @override
     def with_config(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         # Sadly Unpack is not well supported by mypy so this will have to be untyped
         **kwargs: Any,
     ) -> Runnable[Input, Output]:
@@ -118,7 +114,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         )
 
     def prepare(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> tuple[Runnable[Input, Output], RunnableConfig]:
         """Prepare the Runnable for invocation.
 
@@ -136,19 +132,19 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     @abstractmethod
     def _prepare(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> tuple[Runnable[Input, Output], RunnableConfig]: ...
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         runnable, config = self.prepare(config)
         return runnable.invoke(input, config, **kwargs)
 
     @override
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         runnable, config = self.prepare(config)
         return await runnable.ainvoke(input, config, **kwargs)
@@ -157,10 +153,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def batch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         configs = get_config_list(config, len(inputs))
         prepared = [self.prepare(c) for c in configs]
@@ -179,7 +175,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         def invoke(
             prepared: tuple[Runnable[Input, Output], RunnableConfig],
             input_: Input,
-        ) -> Union[Output, Exception]:
+        ) -> Output | Exception:
             bound, config = prepared
             if return_exceptions:
                 try:
@@ -200,10 +196,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     async def abatch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         configs = get_config_list(config, len(inputs))
         prepared = [self.prepare(c) for c in configs]
@@ -222,7 +218,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         async def ainvoke(
             prepared: tuple[Runnable[Input, Output], RunnableConfig],
             input_: Input,
-        ) -> Union[Output, Exception]:
+        ) -> Output | Exception:
             bound, config = prepared
             if return_exceptions:
                 try:
@@ -239,8 +235,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         runnable, config = self.prepare(config)
         return runnable.stream(input, config, **kwargs)
@@ -249,8 +245,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         runnable, config = self.prepare(config)
         async for chunk in runnable.astream(input, config, **kwargs):
@@ -260,8 +256,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     def transform(
         self,
         input: Iterator[Input],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         runnable, config = self.prepare(config)
         return runnable.transform(input, config, **kwargs)
@@ -270,8 +266,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     async def atransform(
         self,
         input: AsyncIterator[Input],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         runnable, config = self.prepare(config)
         async for chunk in runnable.atransform(input, config, **kwargs):
@@ -423,7 +419,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         return self.default.configurable_fields(**{**self.fields, **kwargs})
 
     def _prepare(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> tuple[Runnable[Input, Output], RunnableConfig]:
         config = ensure_config(config)
         specs_by_id = {spec.id: (key, spec) for key, spec in self.fields.items()}
@@ -470,9 +466,7 @@ class StrEnum(str, enum.Enum):
 
 
 _enums_for_spec: WeakValueDictionary[
-    Union[
-        ConfigurableFieldSingleOption, ConfigurableFieldMultiOption, ConfigurableField
-    ],
+    ConfigurableFieldSingleOption | ConfigurableFieldMultiOption | ConfigurableField,
     type[StrEnum],
 ] = WeakValueDictionary()
 
@@ -540,7 +534,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     alternatives: dict[
         str,
-        Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
+        Runnable[Input, Output] | Callable[[], Runnable[Input, Output]],
     ]
     """The alternatives to choose from."""
 
@@ -614,7 +608,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         )
 
     def _prepare(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> tuple[Runnable[Input, Output], RunnableConfig]:
         config = ensure_config(config)
         which = config.get("configurable", {}).get(self.which.id, self.default_key)
@@ -677,8 +671,8 @@ def prefix_config_spec(
 
 
 def make_options_spec(
-    spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
-    description: Optional[str],
+    spec: ConfigurableFieldSingleOption | ConfigurableFieldMultiOption,
+    description: str | None,
 ) -> ConfigurableFieldSpec:
     """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
 

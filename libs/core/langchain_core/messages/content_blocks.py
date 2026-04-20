@@ -1,7 +1,7 @@
 """Types for content blocks."""
 
 import warnings
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import TypeAdapter, ValidationError
 from typing_extensions import NotRequired, TypedDict
@@ -58,12 +58,9 @@ class IDContentBlock(TypedDict):
     """Identifier for data source."""
 
 
-DataContentBlock = Union[
-    URLContentBlock,
-    Base64ContentBlock,
-    PlainTextContentBlock,
-    IDContentBlock,
-]
+DataContentBlock = (
+    URLContentBlock | Base64ContentBlock | PlainTextContentBlock | IDContentBlock
+)
 
 _DataContentBlockAdapter: TypeAdapter[DataContentBlock] = TypeAdapter(DataContentBlock)
 

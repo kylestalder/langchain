@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -88,7 +88,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
         cls,
         llm: BaseLanguageModel,
         chain_type: str = "stuff",
-        chain_type_kwargs: Optional[dict] = None,
+        chain_type_kwargs: dict | None = None,
         **kwargs: Any,
     ) -> BaseQAWithSourcesChain:
         """Load chain from chain type."""
@@ -157,7 +157,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         accepts_run_manager = (
@@ -194,7 +194,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         accepts_run_manager = (

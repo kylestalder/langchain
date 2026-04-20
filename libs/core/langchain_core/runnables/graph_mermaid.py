@@ -7,7 +7,7 @@ import re
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import yaml
 
@@ -26,13 +26,13 @@ def draw_mermaid(
     nodes: dict[str, Node],
     edges: list[Edge],
     *,
-    first_node: Optional[str] = None,
-    last_node: Optional[str] = None,
+    first_node: str | None = None,
+    last_node: str | None = None,
     with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
-    node_styles: Optional[NodeStyles] = None,
+    node_styles: NodeStyles | None = None,
     wrap_label_n_words: int = 9,
-    frontmatter_config: Optional[dict[str, Any]] = None,
+    frontmatter_config: dict[str, Any] | None = None,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data.
 
@@ -145,7 +145,7 @@ def draw_mermaid(
         src_parts = edge.source.split(":")
         tgt_parts = edge.target.split(":")
         common_prefix = ":".join(
-            src for src, tgt in zip(src_parts, tgt_parts) if src == tgt
+            src for src, tgt in zip(src_parts, tgt_parts, strict=False) if src == tgt
         )
         edge_groups.setdefault(common_prefix, []).append(edge)
 
@@ -253,9 +253,9 @@ def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
 
 def draw_mermaid_png(
     mermaid_syntax: str,
-    output_file_path: Optional[str] = None,
+    output_file_path: str | None = None,
     draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
-    background_color: Optional[str] = "white",
+    background_color: str | None = "white",
     padding: int = 10,
     max_retries: int = 1,
     retry_delay: float = 1.0,
@@ -311,8 +311,8 @@ def draw_mermaid_png(
 
 async def _render_mermaid_using_pyppeteer(
     mermaid_syntax: str,
-    output_file_path: Optional[str] = None,
-    background_color: Optional[str] = "white",
+    output_file_path: str | None = None,
+    background_color: str | None = "white",
     padding: int = 10,
     device_scale_factor: int = 3,
 ) -> bytes:
@@ -385,9 +385,9 @@ async def _render_mermaid_using_pyppeteer(
 def _render_mermaid_using_api(
     mermaid_syntax: str,
     *,
-    output_file_path: Optional[str] = None,
-    background_color: Optional[str] = "white",
-    file_type: Optional[Literal["jpeg", "png", "webp"]] = "png",
+    output_file_path: str | None = None,
+    background_color: str | None = "white",
+    file_type: Literal["jpeg", "png", "webp"] | None = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
 ) -> bytes:

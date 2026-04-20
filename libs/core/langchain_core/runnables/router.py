@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -80,7 +77,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     def __init__(
         self,
-        runnables: Mapping[str, Union[Runnable[Any, Output], Callable[[Any], Output]]],
+        runnables: Mapping[str, Runnable[Any, Output] | Callable[[Any], Output]],
     ) -> None:
         """Create a RouterRunnable.
 
@@ -109,7 +106,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     @override
     def invoke(
-        self, input: RouterInput, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: RouterInput, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         key = input["key"]
         actual_input = input["input"]
@@ -124,8 +121,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     async def ainvoke(
         self,
         input: RouterInput,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Output:
         key = input["key"]
         actual_input = input["input"]
@@ -140,10 +137,10 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     def batch(
         self,
         inputs: list[RouterInput],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         if not inputs:
             return []
@@ -156,7 +153,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         def invoke(
             runnable: Runnable, input_: Input, config: RunnableConfig
-        ) -> Union[Output, Exception]:
+        ) -> Output | Exception:
             if return_exceptions:
                 try:
                     return runnable.invoke(input_, config, **kwargs)
@@ -177,10 +174,10 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     async def abatch(
         self,
         inputs: list[RouterInput],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         if not inputs:
             return []
@@ -193,7 +190,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         async def ainvoke(
             runnable: Runnable, input_: Input, config: RunnableConfig
-        ) -> Union[Output, Exception]:
+        ) -> Output | Exception:
             if return_exceptions:
                 try:
                     return await runnable.ainvoke(input_, config, **kwargs)
@@ -213,8 +210,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     def stream(
         self,
         input: RouterInput,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         key = input["key"]
         actual_input = input["input"]
@@ -229,8 +226,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     async def astream(
         self,
         input: RouterInput,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         key = input["key"]
         actual_input = input["input"]

@@ -5,13 +5,10 @@ from __future__ import annotations
 import asyncio
 import inspect
 import threading
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -135,18 +132,17 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
     """
 
-    input_type: Optional[type[Other]] = None
+    input_type: type[Other] | None = None
 
-    func: Optional[
-        Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]]
-    ] = None
+    func: Callable[[Other], None] | Callable[[Other, RunnableConfig], None] | None = (
+        None
+    )
 
-    afunc: Optional[
-        Union[
-            Callable[[Other], Awaitable[None]],
-            Callable[[Other, RunnableConfig], Awaitable[None]],
-        ]
-    ] = None
+    afunc: (
+        Callable[[Other], Awaitable[None]]
+        | Callable[[Other, RunnableConfig], Awaitable[None]]
+        | None
+    ) = None
 
     @override
     def __repr_args__(self) -> Any:
@@ -156,23 +152,16 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
     def __init__(
         self,
-        func: Optional[
-            Union[
-                Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]],
-                Union[
-                    Callable[[Other], Awaitable[None]],
-                    Callable[[Other, RunnableConfig], Awaitable[None]],
-                ],
-            ]
-        ] = None,
-        afunc: Optional[
-            Union[
-                Callable[[Other], Awaitable[None]],
-                Callable[[Other, RunnableConfig], Awaitable[None]],
-            ]
-        ] = None,
+        func: Callable[[Other], None]
+        | Callable[[Other, RunnableConfig], None]
+        | Callable[[Other], Awaitable[None]]
+        | Callable[[Other, RunnableConfig], Awaitable[None]]
+        | None = None,
+        afunc: Callable[[Other], Awaitable[None]]
+        | Callable[[Other, RunnableConfig], Awaitable[None]]
+        | None = None,
         *,
-        input_type: Optional[type[Other]] = None,
+        input_type: type[Other] | None = None,
         **kwargs: Any,
     ) -> None:
         """Create e RunnablePassthrough.
@@ -212,14 +201,9 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     @override
     def assign(
         cls,
-        **kwargs: Union[
-            Runnable[dict[str, Any], Any],
-            Callable[[dict[str, Any]], Any],
-            Mapping[
-                str,
-                Union[Runnable[dict[str, Any], Any], Callable[[dict[str, Any]], Any]],
-            ],
-        ],
+        **kwargs: Runnable[dict[str, Any], Any]
+        | Callable[[dict[str, Any]], Any]
+        | Mapping[str, Runnable[dict[str, Any], Any] | Callable[[dict[str, Any]], Any]],
     ) -> RunnableAssign:
         """Merge the Dict input with the output produced by the mapping argument.
 
@@ -235,7 +219,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
     @override
     def invoke(
-        self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Other, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Other:
         if self.func is not None:
             call_func_with_variable_args(
@@ -247,8 +231,8 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     async def ainvoke(
         self,
         input: Other,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Other:
         if self.afunc is not None:
             await acall_func_with_variable_args(
@@ -264,7 +248,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     def transform(
         self,
         input: Iterator[Other],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[Other]:
         if self.func is None:
@@ -295,7 +279,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     async def atransform(
         self,
         input: AsyncIterator[Other],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Other]:
         if self.afunc is None and self.func is None:
@@ -338,7 +322,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     def stream(
         self,
         input: Other,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[Other]:
         return self.transform(iter([input]), config, **kwargs)
@@ -347,7 +331,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     async def astream(
         self,
         input: Other,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Other]:
         async def input_aiter() -> AsyncIterator[Other]:
@@ -419,9 +403,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return ["langchain", "schema", "runnable"]
 
     @override
-    def get_name(
-        self, suffix: Optional[str] = None, *, name: Optional[str] = None
-    ) -> str:
+    def get_name(self, suffix: str | None = None, *, name: str | None = None) -> str:
         name = (
             name
             or self.name
@@ -430,9 +412,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return super().get_name(suffix, name=name)
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
         if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
@@ -442,7 +422,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     @override
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
@@ -507,7 +487,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def invoke(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
@@ -536,7 +516,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def ainvoke(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
@@ -591,7 +571,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def transform(
         self,
         input: Iterator[dict[str, Any]],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any | None,
     ) -> Iterator[dict[str, Any]]:
         yield from self._transform_stream_with_config(
@@ -643,7 +623,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def atransform(
         self,
         input: AsyncIterator[dict[str, Any]],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[dict[str, Any]]:
         async for chunk in self._atransform_stream_with_config(
@@ -655,7 +635,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def stream(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[dict[str, Any]]:
         return self.transform(iter([input]), config, **kwargs)
@@ -664,7 +644,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def astream(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[dict[str, Any]]:
         async def input_aiter() -> AsyncIterator[dict[str, Any]]:
@@ -702,9 +682,9 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
     """
 
-    keys: Union[str, list[str]]
+    keys: str | list[str]
 
-    def __init__(self, keys: Union[str, list[str]], **kwargs: Any) -> None:
+    def __init__(self, keys: str | list[str], **kwargs: Any) -> None:
         """Create a RunnablePick.
 
         Args:
@@ -724,9 +704,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         return ["langchain", "schema", "runnable"]
 
     @override
-    def get_name(
-        self, suffix: Optional[str] = None, *, name: Optional[str] = None
-    ) -> str:
+    def get_name(self, suffix: str | None = None, *, name: str | None = None) -> str:
         name = (
             name
             or self.name
@@ -756,7 +734,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def invoke(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
@@ -771,7 +749,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def ainvoke(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
@@ -789,7 +767,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def transform(
         self,
         input: Iterator[dict[str, Any]],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[dict[str, Any]]:
         yield from self._transform_stream_with_config(
@@ -809,7 +787,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def atransform(
         self,
         input: AsyncIterator[dict[str, Any]],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[dict[str, Any]]:
         async for chunk in self._atransform_stream_with_config(
@@ -821,7 +799,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     def stream(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[dict[str, Any]]:
         return self.transform(iter([input]), config, **kwargs)
@@ -830,7 +808,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     async def astream(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[dict[str, Any]]:
         async def input_aiter() -> AsyncIterator[dict[str, Any]]:

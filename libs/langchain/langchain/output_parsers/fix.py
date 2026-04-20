@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, TypeVar, Union
+from typing import Annotated, Any, TypeVar
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
@@ -34,7 +34,7 @@ class OutputFixingParser(BaseOutputParser[T]):
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Annotated[
-        Union[RunnableSerializable[OutputFixingParserRetryChainInput, str], Any],
+        RunnableSerializable[OutputFixingParserRetryChainInput, str] | Any,
         SkipValidation(),
     ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""

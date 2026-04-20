@@ -6,7 +6,7 @@ import logging
 import threading
 import weakref
 from concurrent.futures import Future, ThreadPoolExecutor, wait
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import langsmith
@@ -60,11 +60,11 @@ class EvaluatorCallbackHandler(BaseTracer):
     def __init__(
         self,
         evaluators: Sequence[langsmith.RunEvaluator],
-        client: Optional[langsmith.Client] = None,
-        example_id: Optional[Union[UUID, str]] = None,
+        client: langsmith.Client | None = None,
+        example_id: UUID | str | None = None,
         skip_unfinished: bool = True,  # noqa: FBT001,FBT002
-        project_name: Optional[str] = "evaluators",
-        max_concurrency: Optional[int] = None,
+        project_name: str | None = "evaluators",
+        max_concurrency: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Create an EvaluatorCallbackHandler.
@@ -91,7 +91,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         self.client = client or langchain_tracer.get_client()
         self.evaluators = evaluators
         if max_concurrency is None:
-            self.executor: Optional[ThreadPoolExecutor] = _get_executor()
+            self.executor: ThreadPoolExecutor | None = _get_executor()
         elif max_concurrency > 0:
             self.executor = ThreadPoolExecutor(max_workers=max_concurrency)
             weakref.finalize(
@@ -157,7 +157,7 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def _select_eval_results(
         self,
-        results: Union[EvaluationResult, EvaluationResults],
+        results: EvaluationResult | EvaluationResults,
     ) -> list[EvaluationResult]:
         if isinstance(results, EvaluationResult):
             results_ = [results]
@@ -173,9 +173,9 @@ class EvaluatorCallbackHandler(BaseTracer):
 
     def _log_evaluation_feedback(
         self,
-        evaluator_response: Union[EvaluationResult, EvaluationResults],
+        evaluator_response: EvaluationResult | EvaluationResults,
         run: Run,
-        source_run_id: Optional[UUID] = None,
+        source_run_id: UUID | None = None,
     ) -> list[EvaluationResult]:
         results = self._select_eval_results(evaluator_response)
         for res in results:

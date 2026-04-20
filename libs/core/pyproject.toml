@@ -96,13 +96,6 @@ ignore = [
     "TD002", # Missing author in TODO
     "TD003", # Missing issue link in TODO
 
-    # Annotation modernization rules (py310+) - defer to follow-up PR
-    "B905",   # zip(strict=...)
-    "UP007",  # Union[X, Y] -> X | Y
-    "UP035",  # typing.List etc deprecated imports
-    "UP038",  # isinstance tuple -> X | Y
-    "UP045",  # Optional[X] -> X | None
-
     # TODO rules
     "ANN401",
     "BLE",
@@ -119,7 +112,7 @@ flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","lan
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pydocstyle.ignore-var-parameters = true
-pyupgrade.keep-runtime-typing = true
+pyupgrade.keep-runtime-typing = false
 
 [tool.coverage.run]
 omit = [ "tests/*",]

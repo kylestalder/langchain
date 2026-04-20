@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from packaging import version
 from pydantic import BaseModel
@@ -479,7 +479,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input
@@ -504,7 +504,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input

@@ -1,6 +1,5 @@
 import re
 from collections.abc import Sequence
-from typing import Optional
 
 from langchain_core.messages import BaseMessage
 
@@ -36,7 +35,7 @@ def _is_openai_data_block(block: dict) -> bool:
     return False
 
 
-def _parse_data_uri(uri: str) -> Optional[dict]:
+def _parse_data_uri(uri: str) -> dict | None:
     """Parse a data URI into its components. If parsing fails, return None.
 
     Example:

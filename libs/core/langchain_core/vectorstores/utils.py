@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import numpy as np
 
-    Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
+    Matrix = list[list[float]] | list[np.ndarray] | np.ndarray
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,5 @@
 import unittest
 import uuid
-from typing import Optional, Union
 
 import pytest
 
@@ -654,7 +653,7 @@ def test_tool_calls_merge() -> None:
         {"content": ""},
     ]
 
-    final: Optional[BaseMessageChunk] = None
+    final: BaseMessageChunk | None = None
 
     for chunk in chunks:
         msg = AIMessageChunk(**chunk)
@@ -1026,9 +1025,7 @@ def test_tool_message_str() -> None:
         ),
     ],
 )
-def test_merge_content(
-    first: Union[list, str], others: list, expected: Union[list, str]
-) -> None:
+def test_merge_content(first: list | str, others: list, expected: list | str) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
 
